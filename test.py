@@ -5,6 +5,37 @@ import yamltree as module
 class TestURL(ut.TestCase):
     pass
 
+class TestYAMLParser(ut.TestCase):
+    def test_root_node(self):
+        node = module.parse_yaml('root', '')
+        self.assertIsInstance(node, module.ContainerNode)
+
+    def test_multi_document(self):
+        node = module.parse_yaml('root', 
+            '''
+---
+name: The Set of Gauntlets 'Pauraegen'
+description: >
+    A set of handgear with sparks that crackle
+    across its knuckleguards.
+---
+name: The Set of Gauntlets 'Paurnen'
+description: >
+   A set of gauntlets that gives off a foul,
+   acrid odour yet remains untarnished.
+            ''')
+        self.assertIsInstance(node, module.ContainerNode)
+
+    def test_multiple_layers(self):
+        root = module.parse_yaml('root', 
+            '''
+            a: 1
+            b:
+                c: 2
+                d: 3
+        ''')
+        self.assertListEqual([root.a.get_data(), root.b.c.get_data(), root.b.d.get_data()], [u'1', u'2', u'3'])
+
 class TestDictParser(ut.TestCase):
     def test_root_node(self):
         node = module.parse_object('root', {})

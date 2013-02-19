@@ -10,6 +10,7 @@ __author__ = "Miklós Koren <miklos.koren@gmail.com>"
 __version__ = "0.1.0"
 
 import re
+import yaml
 
 SLUG_REGEX = re.compile('^[A-Za-z_]\w{0,64}$')
 RESERVED_WORDS = ['get_tree', 'get_data', 'set_data', 'get_absolute_url'
@@ -62,6 +63,16 @@ def parse_object(name, obj):
         node = LiteralNode(name)
         node.set_data(obj)
         return node
+
+def parse_yaml(name, stream):
+    '''
+    Parse a YAML stream into a YAML tree.
+    '''
+    doc = list(yaml.load_all(stream))
+    if len(doc)==1:
+        return parse_object(name, doc[0])
+    else:
+        return parse_object(name, doc)
 
 class Node(object):
     '''
