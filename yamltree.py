@@ -66,12 +66,11 @@ def parse_object(name, obj):
 
 class Node(object):
     '''
-    Represents a YAMLTree node. Nodes can be one of three types:
-        1. list of other nodes
-        2. dictionary or other nodes
-        3. literal
+    Represents a YAMLTree node. Nodes can be either of two types:
+        1. container of other nodes
+        2. literal
 
-    Each node has a unique URL. Except for the root node, each node has a unique parent.
+    Each node has a unique URL (not yet implemented).
     '''
 
     def __init__(self, name, parent = None):
@@ -94,15 +93,9 @@ class YAMLTree(Node):
 
 class LiteralNode(Node):
     def get_data(self):
-        '''
-        Return data stored in child. Parents have no data.
-        '''
         return self.__data__
 
     def set_data(self, value):
-        '''
-        Store value directly.
-        '''
         self.__data__ = unicode(value)
 
     def __unicode__(self):
@@ -117,6 +110,15 @@ class ContainerNode(Node):
 
         node['child']
         node.child
+
+    To add a child, 
+
+        node.add_child(other_node)
+
+    Container nodes are also iterable:
+
+        for child in node:
+            pass
 
     '''
     def __init__(self, name, parent = None):
