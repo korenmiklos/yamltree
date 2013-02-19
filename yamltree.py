@@ -10,7 +10,6 @@ __author__ = "Miklós Koren <miklos.koren@gmail.com>"
 __version__ = "0.1.0"
 
 import re
-import unidecode
 
 SLUG_REGEX = re.compile('^[A-Za-z_]\w{0,64}$')
 RESERVED_WORDS = ['get_tree', 'get_data', 'set_data', 'get_absolute_url'
