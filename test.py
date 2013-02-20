@@ -200,6 +200,16 @@ class TestIteration(ut.TestCase):
         node.add_child(b)
         self.assertDictEqual(node.children_as_dictionary(),{'a': a, 'b': b})
 
+    def test_json_representation(self):
+        node = module.ContainerNode('test')
+        a = module.LiteralNode('a')
+        b = module.LiteralNode('b')
+        a.set_data(1)
+        b.set_data(2)
+        node.add_child(a)
+        node.add_child(b)
+        self.assertEqual(unicode(node), u'{"a": "1", "b": "2"}')
+
 class TestLookup(ut.TestCase):
     def test_attribute(self):
         node = module.ContainerNode('test')

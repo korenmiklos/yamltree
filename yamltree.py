@@ -11,6 +11,7 @@ __version__ = "0.1.0"
 
 import re
 import yaml
+import json
 
 SLUG_REGEX = re.compile('^[A-Za-z_]\w{0,64}$')
 RESERVED_WORDS = ['get_tree', 'get_data', 'set_data', 'get_absolute_url'
@@ -151,6 +152,21 @@ class ContainerNode(Node):
 
     def children_as_dictionary(self):
         return self.__children__
+
+    def get_dictionary(self):
+        output = {}
+        for key, value in self.__children__.iteritems():
+            try:
+                output[key] = value.get_dictionary()
+            except:
+                output[key] = value.get_data()
+        return output
+
+    def __unicode__(self):
+        return json.dumps(self.get_dictionary())
+
+    def __str__(self):
+        return self.__unicode__()
 
     def __getattr__(self, name):
         if name in self.__children__:
