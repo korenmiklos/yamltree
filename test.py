@@ -153,7 +153,14 @@ class TestIteration(ut.TestCase):
             self.assertIsInstance(subnode,module.Node)
 
     def test_iteration_respects_order(self):
-        pass
+        node = module.ContainerNode('test')
+        a = module.LiteralNode('a')
+        b = module.LiteralNode('b')
+        c = module.LiteralNode('c')
+        node.add_child(c)
+        node.add_child(b)
+        node.add_child(a)
+        self.assertListEqual(list(node), [c, b, a])
 
     def test_node_returns_all_attributes(self):
         node = module.ContainerNode('test')

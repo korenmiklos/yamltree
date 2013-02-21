@@ -135,14 +135,16 @@ class ContainerNode(Node):
     def __init__(self, name, parent = None):
         super(ContainerNode, self).__init__(name, parent)
         self.__children__ = {}
+        self.__meta__['ordering'] = []
 
     def add_child(self, node):
         if node.__name__ in [child.__name__ for child in self]:
             raise NameError, 'Children must have unique names'
         self.__children__[node.__name__] = node
+        self.__meta__['ordering'].append(node.__name__)
 
     def __iter__(self):
-        return iter(self.__children__.values())
+        return iter([self.__children__[key] for key in self.__meta__['ordering']])
 
     def __len__(self):
         '''
