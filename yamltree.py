@@ -89,7 +89,7 @@ class Node(object):
         if (not SLUG_REGEX.match(slug)) or (slug in RESERVED_WORDS) or (RESERVED_WORDS_REGEX.match(slug)):
             raise NameError, '%s is not an admissible name' % slug
         self.__name__ = slug
-        self.__url__ = '%s/%s' % ('', name)
+        self.__url__ = '%s' % slug
         self.__meta__ = dict(verbose_name=name)
         self.__data__ = None
         self.__children__ = None
