@@ -33,6 +33,15 @@ You can access the data in Python easily:
 	for paper in papers.published:
 		print paper.title
 
+Installing YAML Tree
+--------------------
+
+Install from source on Github:
+
+	git clone https://github.com/korenmiklos/yamltree.git
+	cd yamltree
+	python setup.py install
+
 Usage
 -----
 
