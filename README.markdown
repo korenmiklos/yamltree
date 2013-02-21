@@ -45,26 +45,22 @@ Install from source on Github:
 Usage
 -----
 
-Each YAMLTree is a tree of nodes. A YAMLTree node can be one of three types:
+Each YAMLTree is a tree of nodes. A YAMLTree node can be one of two types:
 
-1. a list of other nodes
-2. a dictionary of other nodes
-3. a literal.
+1. a container of other nodes
+2. a literal.
 
 The node may be stored as a folder, as a YAML document, or as a dictionary or list within the YAML document. This is completely transparent to the user, as it does not affect the node's interface.
 
-Lists
-~~~~~
+Containers
+~~~~~~~~~~
 
-Lists are iterable:
+Containers are iterable:
 
 	for paper in papers.published:
 		print paper.title
 
-Dictionaries
-~~~~~~~~~~~~
-
-Dictionaries can be addressed in a number of ways:
+Containers can also be addressed in a number of ways:
 
 	paper = papers.published.paper1
 	for field in paper:
