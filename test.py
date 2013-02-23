@@ -2,8 +2,26 @@
 import unittest as ut 
 import yamltree as module
 
-class TestURL(ut.TestCase):
-    pass
+class TestParents(ut.TestCase):
+    def test_cannot_have_more_parents(self):
+        father = module.ContainerNode('father')
+        mother = module.ContainerNode('mother')
+        child = module.LiteralNode('child')
+
+        father.add_child(child)
+        def callable():
+            mother.add_child(child)
+        self.assertRaises(ValueError, callable)
+
+    def test_root_url(self):
+        father = module.ContainerNode('father')
+        self.assertEqual(father.get_absolute_url(), '/father')
+
+    def test_child_url(self):
+        father = module.ContainerNode('father')
+        child = module.LiteralNode('child')
+        father.add_child(child)
+        self.assertEqual(child.get_absolute_url(), '/father/child')
 
 class TestYAMLParser(ut.TestCase):
     def test_root_node(self):

@@ -88,14 +88,17 @@ class Node(object):
         slug = slugify(name)
         if (not SLUG_REGEX.match(slug)) or (slug in RESERVED_WORDS) or (RESERVED_WORDS_REGEX.match(slug)):
             raise NameError, '%s is not an admissible name' % slug
+        self.__parent__ = parent
         self.__name__ = slug
-        self.__url__ = '%s' % slug
         self.__meta__ = dict(verbose_name=name)
         self.__data__ = None
         self.__children__ = None
 
     def get_absolute_url(self):
-        return self.__url__
+        if self.__parent__ is None:
+            return '/%s' % self.__name__
+        else:
+            return '%s/%s' % (self.__parent__.get_absolute_url(), self.__name__)
 
     def set_metadata(self, **kwargs):
         for (key, value) in kwargs.iteritems():
@@ -148,8 +151,11 @@ class ContainerNode(Node):
     def add_child(self, node):
         if node.__name__ in [child.__name__ for child in self]:
             raise NameError, 'Children must have unique names'
+        if node.__parent__ is not None:
+            raise ValueError, 'Child cannot have multiple parents'
         self.__children__[node.__name__] = node
         self.__meta__['ordering'].append(node.__name__)
+        node.__parent__ = self
 
     def __iter__(self):
         return iter([self.__children__[key] for key in self.__meta__['ordering']])
