@@ -100,6 +100,25 @@ class TestInterface(ut.TestCase):
         node.set_data(5)
         self.assertEqual(node.get_data(),unicode(node))
 
+    def test_metadata_accepts_kwargs(self):
+        node = module.LiteralNode('test')
+        try:
+            node.set_metadata(priority=5)
+        except:
+            self.fail    
+
+    def test_metadata_not_accept_args(self):
+        node = module.LiteralNode('test')
+        def callable():
+            node.set_metadata(5)
+        self.assertRaises(Exception, callable)
+
+    def test_set_and_get_metadata(self):
+        node = module.LiteralNode('test')
+        node.set_metadata(priority=5, language='hu')
+        self.assertEqual(node.get_metadata('priority'), 5)
+        self.assertEqual(node.get_metadata('language'), 'hu')
+
 class TestExceptions(ut.TestCase):
     def test_long_name_rejected(self):
         def callable():     

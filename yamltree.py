@@ -97,6 +97,13 @@ class Node(object):
     def get_absolute_url(self):
         return self.__url__
 
+    def set_metadata(self, **kwargs):
+        for (key, value) in kwargs.iteritems():
+            self.__meta__[key] = value
+
+    def get_metadata(self, key):
+        return self.__meta__[key]
+
 
 class YAMLTree(Node):
     def __init__(self, root):
@@ -135,6 +142,7 @@ class ContainerNode(Node):
     def __init__(self, name, parent = None):
         super(ContainerNode, self).__init__(name, parent)
         self.__children__ = {}
+        # store ordering in __meta__ so that applications can change that if they want
         self.__meta__['ordering'] = []
 
     def add_child(self, node):
