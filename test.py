@@ -1,6 +1,57 @@
 # -*- coding: utf-8 -*-
 import unittest as ut 
 import yamltree as module
+import os
+from shutil import rmtree
+import yaml
+import re
+
+class TestYAMLLoader(ut.TestCase):
+    def setUp(self):
+        os.makedirs('testdata/folder1')
+        os.makedirs('testdata/folder2')
+        doc0 = open('testdata/document.yaml', 'w')
+        doc1 = open('testdata/folder1/document.yaml', 'w')
+        doc2 = open('testdata/folder2/document.yaml', 'w')
+        notadoc = open('testdata/notadoc.txt', 'w')
+        excluded = open('testdata/.excluded.yaml', 'w')
+        data = dict(title='Test document', content='Test data')
+        
+        for stream in [doc0, doc1, doc2, notadoc, excluded]:
+            yaml.dump(data, stream)
+            stream.close()
+
+    def tearDown(self):
+        rmtree('testdata')
+
+    def test_doc0_parsed(self):
+        root = module.ContainerNode('root')
+        module.read_and_parse_yaml_files(root, 'testdata')
+        self.assertIsInstance(root.document, module.ContainerNode)
+
+    def test_doc1_parsed(self):
+        root = module.ContainerNode('root')
+        module.read_and_parse_yaml_files(root, 'testdata')
+        self.assertEqual(unicode(root.folder1.document), '{"content": "Test data", "title": "Test document"}')
+
+    def test_doc2_parsed(self):
+        root = module.ContainerNode('root')
+        module.read_and_parse_yaml_files(root, 'testdata')
+        self.assertEqual(unicode(root.folder2.document), '{"content": "Test data", "title": "Test document"}')
+
+    def test_notadoc_notparsed(self):
+        root = module.ContainerNode('root')
+        module.read_and_parse_yaml_files(root, 'testdata')
+        self.failIf('notadoc' in [child.__name__ for child in root])
+
+    def test_excluded_notparsed(self):
+        root = module.ContainerNode('root')
+        module.read_and_parse_yaml_files(root, 'testdata', exclude=[re.compile('^\..*$')])
+        self.failIf('_excluded' in [child.__name__ for child in root])
+
+    def test_excluded_notparsed_in_yamltree(self):
+        root = module.YAMLTree('testdata', exclude=['^\..*$'])
+        self.failIf('_excluded' in [child.__name__ for child in root])
 
 class TestParents(ut.TestCase):
     def test_cannot_have_more_parents(self):

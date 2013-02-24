@@ -7,16 +7,20 @@
 
 __docformat__ = 'markdown en'
 __author__ = "Miklós Koren <miklos.koren@gmail.com>"
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 import re
 import yaml
 import json
+import fnmatch
+import os
 
 SLUG_REGEX = re.compile('^[A-Za-z_]\w{0,64}$')
 RESERVED_WORDS = ['get_tree', 'get_data', 'set_data', 'get_absolute_url'
                             'children_as_dictionary']
 RESERVED_WORDS_REGEX = re.compile('^__[A-Za-z]+__$')
+YAML_FILE = re.compile('^.+\.ya?ml$')
+EXCLUDED = re.compile('^\..*$')
 
 try:
     import unidecode
@@ -25,6 +29,21 @@ try:
 except:
     def slugify(verbose_name):
         return re.sub(r'\W+','_',verbose_name.lower())
+
+def read_and_parse_yaml_files(parent, path, exclude=[]):
+    fullpath = os.path.normpath(path)
+    for entry in os.listdir(fullpath):
+        if not any([pattern.match(entry) for pattern in exclude]): 
+            fullname = os.path.join(fullpath, entry)
+            if os.path.isdir(fullname):
+                node = ContainerNode(entry) 
+                read_and_parse_yaml_files(node, fullname)
+                parent.add_child(node)
+            elif os.path.isfile(fullname):
+                if YAML_FILE.match(entry):
+                    shortname, ext = os.path.splitext(entry)
+                    node = parse_yaml(shortname, open(fullname, 'r').read())
+                    parent.add_child(node)
 
 def parse_object(name, obj):
     '''
@@ -107,10 +126,6 @@ class Node(object):
     def get_metadata(self, key):
         return self.__meta__[key]
 
-
-class YAMLTree(Node):
-    def __init__(self, root):
-        pass
 
 class LiteralNode(Node):
     def get_data(self):
@@ -200,4 +215,14 @@ class ContainerNode(Node):
         raise TypeError, 'Container nodes cannot handle data directly.'
     def get_data(self, *args):
         raise LookupError, 'Container nodes cannot handle data directly.'
+
+class YAMLTree(ContainerNode):
+    def __init__(self, root, exclude=[]):
+            self.path = os.path.normpath(root)
+            self.exclude = []
+            for pattern in exclude:
+                self.exclude.append(re.compile(pattern))
+            super(YAMLTree, self).__init__('root')
+            read_and_parse_yaml_files(self, self.path, self.exclude)
+
 
