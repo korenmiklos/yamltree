@@ -115,6 +115,8 @@ class Node(object):
 
     def get_absolute_url(self):
         if self.__parent__ is None:
+            return '/'
+        elif self.__parent__.get_absolute_url() == '/':
             return '/%s' % self.__name__
         else:
             return '%s/%s' % (self.__parent__.get_absolute_url(), self.__name__)
@@ -224,5 +226,11 @@ class YAMLTree(ContainerNode):
                 self.exclude.append(re.compile(pattern))
             super(YAMLTree, self).__init__('root')
             read_and_parse_yaml_files(self, self.path, self.exclude)
+
+    def get_by_url(self, url):
+        parts = url.split('/')
+        def lookup(node, child):
+            return node[child]
+        return reduce(lookup, [self]+parts[1:])
 
 

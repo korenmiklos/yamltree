@@ -53,6 +53,21 @@ class TestYAMLLoader(ut.TestCase):
         root = module.YAMLTree('testdata', exclude=['^\..*$'])
         self.failIf('_excluded' in [child.__name__ for child in root])
 
+    def test_get_by_url(self):
+        root = module.YAMLTree('testdata', exclude=['^\..*$'])
+        self.assertEqual(root.get_by_url('/folder1/document/title'), root.folder1.document.title)
+
+    def test_get_by_own_url(self):
+        root = module.YAMLTree('testdata', exclude=['^\..*$'])
+        self.assertEqual(root.get_by_url(root.folder1.document.title.get_absolute_url()), root.folder1.document.title)
+
+    def test_unknown_url_fails(self):
+        root = module.YAMLTree('testdata', exclude=['^\..*$'])
+        def callable():
+            root.get_by_url('/folder3/document')
+        self.assertRaises(LookupError, callable)
+
+
 class TestParents(ut.TestCase):
     def test_cannot_have_more_parents(self):
         father = module.ContainerNode('father')
@@ -66,13 +81,13 @@ class TestParents(ut.TestCase):
 
     def test_root_url(self):
         father = module.ContainerNode('father')
-        self.assertEqual(father.get_absolute_url(), '/father')
+        self.assertEqual(father.get_absolute_url(), '/')
 
     def test_child_url(self):
         father = module.ContainerNode('father')
         child = module.LiteralNode('child')
         father.add_child(child)
-        self.assertEqual(child.get_absolute_url(), '/father/child')
+        self.assertEqual(child.get_absolute_url(), '/child')
 
 class TestYAMLParser(ut.TestCase):
     def test_root_node(self):
