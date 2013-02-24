@@ -229,8 +229,9 @@ class YAMLTree(ContainerNode):
 
     def get_by_url(self, url):
         parts = url.split('/')
+        parts = [part for part in parts if not part=='']
         def lookup(node, child):
             return node[child]
-        return reduce(lookup, [self]+parts[1:])
+        return reduce(lookup, [self]+parts)
 
 
