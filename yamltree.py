@@ -205,13 +205,13 @@ class ContainerNode(Node):
         if name in self.__children__:
             return self.__children__[name]
         else:
-            raise KeyError
+            raise KeyError, '%s is not a child node.' % name
 
     def __getitem__(self, key):
         if key in self.__children__:
             return self.__children__[key]
         else:
-            raise KeyError
+            raise KeyError, '%s is not a child node.' % key
 
     def set_data(self, *args):
         raise TypeError, 'Container nodes cannot handle data directly.'

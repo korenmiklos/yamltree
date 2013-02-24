@@ -53,6 +53,10 @@ class TestYAMLLoader(ut.TestCase):
         root = module.YAMLTree('testdata', exclude=['^\..*$'])
         self.failIf('_excluded' in [child.__name__ for child in root])
 
+    def test_get_top(self):
+        root = module.YAMLTree('testdata', exclude=['^\..*$'])
+        self.assertEqual(root.get_by_url('/folder1'), root.folder1)
+
     def test_get_by_url(self):
         root = module.YAMLTree('testdata', exclude=['^\..*$'])
         self.assertEqual(root.get_by_url('/folder1/document/title'), root.folder1.document.title)
