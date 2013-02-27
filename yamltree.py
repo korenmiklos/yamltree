@@ -205,8 +205,8 @@ class ContainerNode(Node):
         return self.__unicode__()
 
     def __getattr__(self, name):
-        if name in self.__children__:
-            return self.__children__[name]
+        if name.lower() in self.__children__:
+            return self.__children__[name.lower()]
         else:
             raise KeyError, '%s is not a child node.' % name
 

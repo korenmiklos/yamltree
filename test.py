@@ -361,6 +361,14 @@ class TestLookup(ut.TestCase):
         self.assertEqual(node.a, a)
         self.assertEqual(node.b, b)
 
+    def test_mixed_case(self):
+        node = module.ContainerNode('test')
+        a = module.LiteralNode('aLPHa')
+
+        node.add_child(a)
+
+        self.assertEqual(node.AlphA, a)
+
     def test_dictionary(self):
         node = module.ContainerNode('test')
         a = module.LiteralNode('a')
