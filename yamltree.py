@@ -121,6 +121,9 @@ class Node(object):
         else:
             return '%s/%s' % (self.__parent__.get_absolute_url(), self.__name__)
 
+    def get_relative_url(self, other):
+        return os.path.relpath(self.get_absolute_url(), other.get_absolute_url())
+
     def set_metadata(self, **kwargs):
         for (key, value) in kwargs.iteritems():
             self.__meta__[key] = value

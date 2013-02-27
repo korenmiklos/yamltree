@@ -97,6 +97,23 @@ class TestParents(ut.TestCase):
         father.add_child(child)
         self.assertEqual(child.get_absolute_url(), '/child')
 
+    def test_relative_url_down(self):
+        father = module.ContainerNode('father')
+        child = module.ContainerNode('child')
+        grandchild = module.LiteralNode('grandchild')
+        father.add_child(child)
+        child.add_child(grandchild)
+        self.assertEqual(grandchild.get_relative_url(father), 'child/grandchild')
+
+    def test_relative_url_up(self):
+        father = module.ContainerNode('father')
+        child = module.ContainerNode('child')
+        grandchild = module.LiteralNode('grandchild')
+        father.add_child(child)
+        child.add_child(grandchild)
+        self.assertEqual(child.get_relative_url(grandchild), '..')
+
+
 class TestYAMLParser(ut.TestCase):
     def test_root_node(self):
         node = module.parse_yaml('root', '')
