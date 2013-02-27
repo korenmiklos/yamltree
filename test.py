@@ -61,6 +61,10 @@ class TestYAMLLoader(ut.TestCase):
         root = module.YAMLTree('testdata', exclude=['^\..*$'])
         self.assertEqual(root.get_by_url('/folder1/document/title'), root.folder1.document.title)
 
+    def test_get_by_unnormalized_url(self):
+        root = module.YAMLTree('testdata', exclude=['^\..*$'])
+        self.assertEqual(root.get_by_url('/folder1/../folder2/document/title'), root.folder2.document.title)
+
     def test_trailing_slash(self):
         root = module.YAMLTree('testdata', exclude=['^\..*$'])
         self.assertEqual(root.get_by_url('/folder1/document/title/'), root.folder1.document.title)

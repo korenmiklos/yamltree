@@ -231,6 +231,7 @@ class YAMLTree(ContainerNode):
             read_and_parse_yaml_files(self, self.path, self.exclude)
 
     def get_by_url(self, url):
+        url = os.path.normpath(url)
         parts = url.split('/')
         parts = [part for part in parts if not part=='']
         def lookup(node, child):
