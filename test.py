@@ -231,6 +231,10 @@ class TestInterface(ut.TestCase):
         node = module.LiteralNode(u'árvíztűrő')
         self.assertEqual(node.__meta__['verbose_name'], u'árvíztűrő')
 
+    def test_get_verbose_name(self):
+        node = module.LiteralNode(u'árvíztűrő')
+        self.assertEqual(node.get_verbose_name(), u'árvíztűrő')
+
     def test_node_returns_string(self):
         node = module.LiteralNode('test')
         node.set_data(5)

@@ -140,6 +140,9 @@ class Node(object):
     def get_metadata(self, key):
         return self.__meta__[key]
 
+    def get_verbose_name(self):
+        return self.__meta__['verbose_name']
+
 
 class LiteralNode(Node):
     def get_data(self):
