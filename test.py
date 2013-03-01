@@ -185,6 +185,15 @@ class TestDictParser(ut.TestCase):
         self.assertEqual(node.slug1.content.get_data(), u'1')
         self.assertEqual(node.slug2.content.get_data(), u'2')
 
+    def test_missing_key(self):
+        node = module.parse_object('root', [1, 2], primary_keys='slug')
+        self.assertEqual(node.id0.get_data(), u'1')
+
+    def test_primary_key_is_slugified(self):
+        node = module.parse_object('root', [dict(slug='two words', content=1),],
+         primary_keys='slug')
+        self.assertEqual(node.two_words.content.get_data(), u'1')
+
     def test_literal_node(self):
         node = module.parse_object('root', 'test')
         self.assertIsInstance(node, module.LiteralNode)
