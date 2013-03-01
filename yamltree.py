@@ -30,22 +30,22 @@ except:
     def slugify(verbose_name):
         return re.sub(r'\W+','_',verbose_name.lower())
 
-def read_and_parse_yaml_files(parent, path, exclude=[]):
+def read_and_parse_yaml_files(parent, path, exclude=[], primary_keys=[]):
     fullpath = os.path.normpath(path)
     for entry in os.listdir(fullpath):
         if not any([pattern.match(entry) for pattern in exclude]): 
             fullname = os.path.join(fullpath, entry)
             if os.path.isdir(fullname):
                 node = ContainerNode(entry) 
-                read_and_parse_yaml_files(node, fullname)
+                read_and_parse_yaml_files(node, fullname, exclude, primary_keys)
                 parent.add_child(node)
             elif os.path.isfile(fullname):
                 if YAML_FILE.match(entry):
                     shortname, ext = os.path.splitext(entry)
-                    node = parse_yaml(shortname, open(fullname, 'r').read())
+                    node = parse_yaml(shortname, open(fullname, 'r').read(), primary_keys)
                     parent.add_child(node)
 
-def parse_object(name, obj):
+def parse_object(name, obj, primary_keys=[]):
     '''
     Parse a python object into a YAML tree.
 
@@ -67,6 +67,8 @@ def parse_object(name, obj):
     3
 
     '''
+    if isinstance(primary_keys, basestring):
+        primary_keys = [primary_keys]
     if isinstance(obj, dict):
         root = ContainerNode(name)
         for (key, value) in obj.iteritems():
@@ -76,7 +78,14 @@ def parse_object(name, obj):
     elif isinstance(obj, list):
         root = ContainerNode(name)
         for (key, value) in zip(range(len(obj)), obj):
-            node = parse_object('id%s' % key, value)
+            nodename = 'id%s' % key
+            for field in primary_keys:
+                try:
+                    nodename = value[field]
+                    break
+                except:
+                    continue
+            node = parse_object(nodename, value)
             root.add_child(node)
         return root
     else:
@@ -84,15 +93,15 @@ def parse_object(name, obj):
         node.set_data(obj)
         return node
 
-def parse_yaml(name, stream):
+def parse_yaml(name, stream, primary_keys=[]):
     '''
     Parse a YAML stream into a YAML tree.
     '''
     doc = list(yaml.load_all(stream))
     if len(doc)==1:
-        return parse_object(name, doc[0])
+        return parse_object(name, doc[0], primary_keys)
     else:
-        return parse_object(name, doc)
+        return parse_object(name, doc, primary_keys)
 
 class Node(object):
     '''
@@ -222,13 +231,13 @@ class ContainerNode(Node):
         raise LookupError, 'Container nodes cannot handle data directly.'
 
 class YAMLTree(ContainerNode):
-    def __init__(self, root, exclude=[]):
+    def __init__(self, root, exclude=[], primary_keys=[]):
             self.path = os.path.normpath(root)
             self.exclude = []
             for pattern in exclude:
                 self.exclude.append(re.compile(pattern))
             super(YAMLTree, self).__init__('root')
-            read_and_parse_yaml_files(self, self.path, self.exclude)
+            read_and_parse_yaml_files(self, self.path, self.exclude, primary_keys)
 
     def get_by_url(self, url):
         url = os.path.normpath(url)

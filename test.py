@@ -13,6 +13,7 @@ class TestYAMLLoader(ut.TestCase):
         doc0 = open('testdata/document.yaml', 'w')
         doc1 = open('testdata/folder1/document.yaml', 'w')
         doc2 = open('testdata/folder2/document.yaml', 'w')
+        doc3 = open('testdata/folder2/list.yaml', 'w')
         notadoc = open('testdata/notadoc.txt', 'w')
         excluded = open('testdata/.excluded.yaml', 'w')
         data = dict(title='Test document', content='Test data')
@@ -20,6 +21,10 @@ class TestYAMLLoader(ut.TestCase):
         for stream in [doc0, doc1, doc2, notadoc, excluded]:
             yaml.dump(data, stream)
             stream.close()
+
+        stream = doc3
+        yaml.dump([dict(id='slug1', content=1), dict(id='slug2', content=2)], stream)
+        stream.close()
 
     def tearDown(self):
         rmtree('testdata')
@@ -79,6 +84,9 @@ class TestYAMLLoader(ut.TestCase):
             root.get_by_url('/folder3/document')
         self.assertRaises(LookupError, callable)
 
+    def test_primary_keys_are_passed(self):
+        root = module.YAMLTree('testdata', primary_keys=['id', 'slug'])
+        self.assertIsInstance(root.folder2.list.slug1, module.ContainerNode)
 
 class TestParents(ut.TestCase):
     def test_cannot_have_more_parents(self):
@@ -165,6 +173,17 @@ class TestDictParser(ut.TestCase):
     def test_list_node(self):
         node = module.parse_object('root', [dict(a=1), dict(b=1)])
         self.assertIsInstance(node, module.ContainerNode)
+
+    def test_private_key(self):
+        node = module.parse_object('root', [dict(slug='slug1', content=1), 
+            dict(slug='slug2', content=2)], primary_keys='slug')
+        self.assertEqual(node.slug1.content.get_data(), u'1')
+
+    def test_multiple_primary_keys(self):
+        node = module.parse_object('root', [dict(slug='slug1', content=1), 
+            dict(name='slug2', content=2)], primary_keys=['slug', 'name'])
+        self.assertEqual(node.slug1.content.get_data(), u'1')
+        self.assertEqual(node.slug2.content.get_data(), u'2')
 
     def test_literal_node(self):
         node = module.parse_object('root', 'test')
