@@ -174,7 +174,12 @@ class TestDictParser(ut.TestCase):
         node = module.parse_object('root', [dict(a=1), dict(b=1)])
         self.assertIsInstance(node, module.ContainerNode)
 
-    def test_private_key(self):
+    def test_primary_key(self):
+        node = module.parse_object('root', [1,2, [dict(slug='slug1', content=1), 
+            dict(slug='slug2', content=2)]], primary_keys='slug')
+        self.assertEqual(node.id2.slug1.content.get_data(), u'1')
+
+    def test_lower_level_primary_key(self):
         node = module.parse_object('root', [dict(slug='slug1', content=1), 
             dict(slug='slug2', content=2)], primary_keys='slug')
         self.assertEqual(node.slug1.content.get_data(), u'1')

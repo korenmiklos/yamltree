@@ -72,7 +72,7 @@ def parse_object(name, obj, primary_keys=[]):
     if isinstance(obj, dict):
         root = ContainerNode(name)
         for (key, value) in obj.iteritems():
-            node = parse_object(key, value)
+            node = parse_object(key, value, primary_keys)
             root.add_child(node)
         return root
     elif isinstance(obj, list):
@@ -85,7 +85,7 @@ def parse_object(name, obj, primary_keys=[]):
                     break
                 except:
                     continue
-            node = parse_object(nodename, value)
+            node = parse_object(nodename, value, primary_keys)
             root.add_child(node)
         return root
     else:
@@ -115,7 +115,7 @@ class Node(object):
     def __init__(self, name, parent = None):
         slug = slugify(name)
         if (not SLUG_REGEX.match(slug)) or (slug in RESERVED_WORDS) or (RESERVED_WORDS_REGEX.match(slug)):
-            raise NameError, '%s is not an admissible name' % slug
+            raise NameError, '%s is not an admissible name. node = %s' % (slug, name)
         self.__parent__ = parent
         self.__name__ = slug
         self.__meta__ = dict(verbose_name=name)
@@ -182,9 +182,9 @@ class ContainerNode(Node):
 
     def add_child(self, node):
         if node.__name__ in [child.__name__ for child in self]:
-            raise NameError, 'Children must have unique names'
+            raise NameError, 'Children must have unique names. node = %s' % self.get_absolute_url()
         if node.__parent__ is not None:
-            raise ValueError, 'Child cannot have multiple parents'
+            raise ValueError, 'Child cannot have multiple parents. node = %s' % self.get_absolute_url()
         self.__children__[node.__name__] = node
         self.__meta__['ordering'].append(node.__name__)
         node.__parent__ = self
@@ -220,18 +220,15 @@ class ContainerNode(Node):
         if name.lower() in self.__children__:
             return self.__children__[name.lower()]
         else:
-            raise KeyError, '%s is not a child node.' % name
+            raise KeyError, '%s is not a child node. node = %s' % (name, self.get_absolute_url())
 
     def __getitem__(self, key):
-        if key in self.__children__:
-            return self.__children__[key]
-        else:
-            raise KeyError, '%s is not a child node.' % key
+        return self.__getattr__(key)
 
     def set_data(self, *args):
-        raise TypeError, 'Container nodes cannot handle data directly.'
+        raise TypeError, 'Container nodes cannot handle data directly. node = %s' % self.get_absolute_url()
     def get_data(self, *args):
-        raise LookupError, 'Container nodes cannot handle data directly.'
+        raise LookupError, 'Container nodes cannot handle data directly. node = %s' % self.get_absolute_url()
 
 class YAMLTree(ContainerNode):
     def __init__(self, root, exclude=[], primary_keys=[]):
