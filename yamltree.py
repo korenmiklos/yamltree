@@ -25,10 +25,16 @@ EXCLUDED = re.compile('^\..*$')
 try:
     import unidecode
     def slugify(verbose_name):
-        return re.sub(r'\W+','_',unidecode.unidecode(verbose_name).lower())
+        slug = re.sub(r'\W+','_',unidecode.unidecode(verbose_name).lower())
+        if not SLUG_REGEX.match(slug):
+            slug = '_'+slug
+        return slug 
 except:
     def slugify(verbose_name):
-        return re.sub(r'\W+','_',verbose_name.lower())
+        slug = re.sub(r'\W+','_',verbose_name.lower())
+        if not SLUG_REGEX.match(slug):
+            slug = '_'+slug
+        return slug 
 
 def read_and_parse_yaml_files(parent, path, exclude=[], primary_keys=[]):
     fullpath = os.path.normpath(path)

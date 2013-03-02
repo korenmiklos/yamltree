@@ -216,9 +216,8 @@ class TestDictParser(ut.TestCase):
 
 class TestInterface(ut.TestCase):
     def test_numerical_name(self):
-        def callable():
-            node = module.LiteralNode('1')
-        self.assertRaises(NameError, callable)
+        node = module.LiteralNode('1')
+        self.assertEqual(node.__name__, u'_1')
 
     def test_accented_name(self):
         node = module.LiteralNode(u'árvíztűrő')
