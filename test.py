@@ -268,6 +268,26 @@ class TestInterface(ut.TestCase):
         self.assertEqual(node.get_metadata('priority'), 5)
         self.assertEqual(node.get_metadata('language'), 'hu')
 
+class TestTrueism(ut.TestCase):
+    def test_true_container(self):
+        node = module.ContainerNode('test')
+        a = module.LiteralNode('a')
+        node.add_child(a)
+        self.failUnless(node)
+
+    def test_false_container(self):
+        node = module.ContainerNode('test')
+        self.failIf(node)
+
+    def test_true_literal(self):
+        node = module.LiteralNode('test')
+        node.set_data('a')
+        self.failUnless(node)
+
+    def test_false_literal(self):
+        node = module.LiteralNode('test')
+        self.failIf(node)
+
 class TestExceptions(ut.TestCase):
     def test_long_name_rejected(self):
         def callable():     

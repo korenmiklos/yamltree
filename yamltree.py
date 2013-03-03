@@ -128,6 +128,10 @@ class Node(object):
         self.__data__ = None
         self.__children__ = None
 
+    def __nonzero__(self):
+        # default object is True
+        return True
+
     def get_absolute_url(self):
         if self.__parent__ is None:
             return '/'
@@ -151,6 +155,10 @@ class Node(object):
 
 
 class LiteralNode(Node):
+    def __nonzero__(self):
+        # literal node is True if has data
+        return self.__data__ is not None
+
     def get_data(self):
         return self.__data__
 
@@ -185,6 +193,10 @@ class ContainerNode(Node):
         self.__children__ = {}
         # store ordering in __meta__ so that applications can change that if they want
         self.__meta__['ordering'] = []
+
+    def __nonzero__(self):
+        # container node is True if has children
+        return len(self.__children__)
 
     def add_child(self, node):
         if node.__name__ in [child.__name__ for child in self]:
