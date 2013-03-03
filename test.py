@@ -380,6 +380,18 @@ class TestIteration(ut.TestCase):
         node.add_child(b)
         self.assertEqual(len(node),2)
 
+    def test_object_in(self):
+        node = module.ContainerNode('test')
+        a = module.LiteralNode('a')
+        node.add_child(a)
+        self.failUnless(a in node)
+
+    def test_name_in(self):
+        node = module.ContainerNode('test')
+        a = module.LiteralNode('a')
+        node.add_child(a)
+        self.failUnless('a' in node)
+
     def test_no_child_returns(self):
         node = module.LiteralNode('test')
         def callable():

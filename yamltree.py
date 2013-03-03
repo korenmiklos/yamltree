@@ -198,6 +198,12 @@ class ContainerNode(Node):
         # container node is True if has children
         return len(self.__children__)
 
+    def __contains__(self, item):
+        if isinstance(item, basestring):
+            return item.lower() in self.__children__.keys()
+        elif isinstance(item, Node):
+            return item in self.__children__.values()
+
     def add_child(self, node):
         if node.__name__ in [child.__name__ for child in self]:
             raise NameError, 'Children must have unique names. node = %s' % self.get_absolute_url()
