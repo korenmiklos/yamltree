@@ -118,15 +118,15 @@ class Node(object):
     Each node has a unique URL (not yet implemented).
     '''
 
-    def __init__(self, name, parent = None):
+    def __init__(self, name):
         slug = slugify(name)
         if (not SLUG_REGEX.match(slug)) or (slug in RESERVED_WORDS) or (RESERVED_WORDS_REGEX.match(slug)):
             raise NameError, '%s is not an admissible name. node = %s' % (slug, name)
-        self.__parent__ = parent
         self.__name__ = slug
         self.__meta__ = dict(verbose_name=name)
         self.__data__ = None
         self.__children__ = None
+        self.__parent__ = None
 
     def __nonzero__(self):
         # default object is True
@@ -188,8 +188,8 @@ class ContainerNode(Node):
             pass
 
     '''
-    def __init__(self, name, parent = None):
-        super(ContainerNode, self).__init__(name, parent)
+    def __init__(self, name):
+        super(ContainerNode, self).__init__(name)
         self.__children__ = {}
         # store ordering in __meta__ so that applications can change that if they want
         self.__meta__['ordering'] = []
