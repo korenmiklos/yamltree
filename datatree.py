@@ -7,11 +7,12 @@
 
 __docformat__ = 'markdown en'
 __author__ = "Miklós Koren <miklos.koren@gmail.com>"
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 import re
 import yaml
 import json
+import csv
 import fnmatch
 import os
 
@@ -35,21 +36,6 @@ except:
         if not SLUG_REGEX.match(slug):
             slug = '_'+slug
         return slug 
-
-def read_and_parse_yaml_files(parent, path, exclude=[], primary_keys=[]):
-    fullpath = os.path.normpath(path)
-    for entry in os.listdir(fullpath):
-        if not any([pattern.match(entry) for pattern in exclude]): 
-            fullname = os.path.join(fullpath, entry)
-            if os.path.isdir(fullname):
-                node = ContainerNode(entry) 
-                read_and_parse_yaml_files(node, fullname, exclude, primary_keys)
-                parent.add_child(node)
-            elif os.path.isfile(fullname):
-                if YAML_FILE.match(entry):
-                    shortname, ext = os.path.splitext(entry)
-                    node = parse_yaml(shortname, open(fullname, 'r').read(), primary_keys)
-                    parent.add_child(node)
 
 def parse_object(name, obj, primary_keys=[]):
     '''
@@ -78,6 +64,9 @@ def parse_object(name, obj, primary_keys=[]):
     if isinstance(obj, dict):
         root = ContainerNode(name)
         for (key, value) in obj.iteritems():
+            if key is None:
+                print "%s: %s" % (key, value)
+                raise NameError
             node = parse_object(key, value, primary_keys)
             root.add_child(node)
         return root
@@ -98,16 +87,6 @@ def parse_object(name, obj, primary_keys=[]):
         node = LiteralNode(name)
         node.set_data(obj)
         return node
-
-def parse_yaml(name, stream, primary_keys=[]):
-    '''
-    Parse a YAML stream into a YAML tree.
-    '''
-    doc = list(yaml.load_all(stream))
-    if len(doc)==1:
-        return parse_object(name, doc[0], primary_keys)
-    else:
-        return parse_object(name, doc, primary_keys)
 
 class Node(object):
     '''
@@ -254,14 +233,100 @@ class ContainerNode(Node):
     def get_data(self, *args):
         raise LookupError, 'Container nodes cannot handle data directly. node = %s' % self.get_absolute_url()
 
-class YAMLTree(ContainerNode):
+class Reader(object):
+    '''
+    Read a folder or serialized file and return a ContainerNode.
+    '''
+    def __init__(self, path, exclude=[], primary_keys=[]):
+        self.path = os.path.normpath(path)
+        self.name = os.path.basename(self.path)
+        self.basename, self.ext = os.path.splitext(self.name)
+        self.exclude = exclude
+        self.primary_keys = primary_keys
+        if os.path.isdir(self.path):
+            self.isdir = True
+        elif os.path.isfile(self.path):
+            self.isdir = False
+        else:
+            raise IOError, 'File %s not found.' % self.path
+
+    def _open(self):
+        '''
+        Open the file and return a stream.
+        '''
+        if not self.isdir:
+            return open(self.path, 'r')
+
+    def _deserialize(self, stream):
+        '''
+        Given a stream, deserialize to a Python object
+        '''
+        raise NotImplementedError
+
+    def read(self):
+        '''
+        Read the data and return a ContainerNode.
+        '''
+        if not self.isdir:
+            return parse_object(self.basename, self._deserialize(self._open()), self.primary_keys)
+
+class FolderReader(Reader):
+    '''
+    A datatree container read from a folder.
+    '''
+    def read(self):
+        root = ContainerNode(self.basename)
+        for entry in os.listdir(self.path):
+            if not any([pattern.match(entry) for pattern in self.exclude]): 
+                fullname = os.path.join(self.path, entry)
+                if os.path.isdir(fullname):
+                    child = FolderReader(fullname, self.exclude, self.primary_keys)
+                    root.add_child(child.read())
+                elif os.path.isfile(fullname):
+                    for (filetype, reader) in DISPATCHER.items():
+                        if filetype.match(fullname):
+                            child = reader(fullname, self.exclude, self.primary_keys)
+                            root.add_child(child.read())
+                            break
+        return root
+
+class YAMLReader(Reader):
+    '''
+    Read from a YAML file.
+    '''
+    def _deserialize(self, stream):
+        doc = list(yaml.load_all(stream.read()))
+        if len(doc)==1:
+            return doc[0]
+        else:
+            return doc
+
+# JSON is a subset of YAML
+JSONReader = YAMLReader
+
+class CSVReader(Reader):
+    '''
+    A datatree container read from a CSV file.
+    '''
+    def _deserialize(self, stream):
+        csv_reader = csv.DictReader(stream)
+        doc = []
+        for row in csv_reader:
+            doc.append(dict([(key, unicode(value, 'utf-8')) for key, value in row.iteritems()]))
+        return doc
+
+DISPATCHER = {re.compile('^.+\.ya?ml$'): YAMLReader, 
+              re.compile('^.+\.csv$'): CSVReader,
+              re.compile('^.+\.json$'): JSONReader}
+
+
+class DataTree(object):
     def __init__(self, root, exclude=[], primary_keys=[]):
-            self.path = os.path.normpath(root)
-            self.exclude = []
-            for pattern in exclude:
-                self.exclude.append(re.compile(pattern))
-            super(YAMLTree, self).__init__('root')
-            read_and_parse_yaml_files(self, self.path, self.exclude, primary_keys)
+        xexclude = []
+        for pattern in exclude:
+            xexclude.append(re.compile(pattern))
+        reader = FolderReader(root, xexclude, primary_keys)
+        self.root = reader.read()
 
     def get_by_url(self, url):
         url = os.path.normpath(url)
@@ -269,6 +334,6 @@ class YAMLTree(ContainerNode):
         parts = [part for part in parts if not part=='']
         def lookup(node, child):
             return node[child]
-        return reduce(lookup, [self]+parts)
+        return reduce(lookup, [self.root]+parts)
 
 

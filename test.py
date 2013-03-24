@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import unittest as ut 
-import yamltree as module
+import datatree as module
 import os
 from shutil import rmtree
 import yaml
@@ -30,63 +30,54 @@ class TestYAMLLoader(ut.TestCase):
         rmtree('testdata')
 
     def test_doc0_parsed(self):
-        root = module.ContainerNode('root')
-        module.read_and_parse_yaml_files(root, 'testdata')
+        root = module.FolderReader('testdata').read()
         self.assertIsInstance(root.document, module.ContainerNode)
 
     def test_doc1_parsed(self):
-        root = module.ContainerNode('root')
-        module.read_and_parse_yaml_files(root, 'testdata')
+        root = module.FolderReader('testdata').read()
         self.assertEqual(unicode(root.folder1.document), '{"content": "Test data", "title": "Test document"}')
 
     def test_doc2_parsed(self):
-        root = module.ContainerNode('root')
-        module.read_and_parse_yaml_files(root, 'testdata')
+        root = module.FolderReader('testdata').read()
         self.assertEqual(unicode(root.folder2.document), '{"content": "Test data", "title": "Test document"}')
 
     def test_notadoc_notparsed(self):
-        root = module.ContainerNode('root')
-        module.read_and_parse_yaml_files(root, 'testdata')
+        root = module.FolderReader('testdata').read()
         self.failIf('notadoc' in [child.__name__ for child in root])
 
     def test_excluded_notparsed(self):
-        root = module.ContainerNode('root')
-        module.read_and_parse_yaml_files(root, 'testdata', exclude=[re.compile('^\..*$')])
-        self.failIf('_excluded' in [child.__name__ for child in root])
-
-    def test_excluded_notparsed_in_yamltree(self):
-        root = module.YAMLTree('testdata', exclude=['^\..*$'])
+        root = module.FolderReader('testdata', exclude=[re.compile('^\..*$')]).read()
         self.failIf('_excluded' in [child.__name__ for child in root])
 
     def test_get_top(self):
-        root = module.YAMLTree('testdata', exclude=['^\..*$'])
-        self.assertEqual(root.get_by_url('/folder1'), root.folder1)
+        tree = module.DataTree('testdata', exclude=['^\..*$'])
+        self.assertEqual(tree.get_by_url('/folder1'), tree.root.folder1)
 
     def test_get_by_url(self):
-        root = module.YAMLTree('testdata', exclude=['^\..*$'])
-        self.assertEqual(root.get_by_url('/folder1/document/title'), root.folder1.document.title)
+        tree = module.DataTree('testdata', exclude=['^\..*$'])
+        self.assertEqual(tree.get_by_url('/folder1/document/title'), tree.root.folder1.document.title)
 
     def test_get_by_unnormalized_url(self):
-        root = module.YAMLTree('testdata', exclude=['^\..*$'])
-        self.assertEqual(root.get_by_url('/folder1/../folder2/document/title'), root.folder2.document.title)
+        tree = module.DataTree('testdata', exclude=['^\..*$'])
+        self.assertEqual(tree.get_by_url('/folder1/../folder2/document/title'), tree.root.folder2.document.title)
 
     def test_trailing_slash(self):
-        root = module.YAMLTree('testdata', exclude=['^\..*$'])
-        self.assertEqual(root.get_by_url('/folder1/document/title/'), root.folder1.document.title)
+        tree = module.DataTree('testdata', exclude=['^\..*$'])
+        self.assertEqual(tree.get_by_url('/folder1/document/title/'), tree.root.folder1.document.title)
 
     def test_get_by_own_url(self):
-        root = module.YAMLTree('testdata', exclude=['^\..*$'])
-        self.assertEqual(root.get_by_url(root.folder1.document.title.get_absolute_url()), root.folder1.document.title)
+        tree = module.DataTree('testdata', exclude=['^\..*$'])
+        self.assertEqual(tree.get_by_url(tree.root.folder1.document.title.get_absolute_url()), tree.root.folder1.document.title)
 
     def test_unknown_url_fails(self):
-        root = module.YAMLTree('testdata', exclude=['^\..*$'])
+        tree = module.DataTree('testdata', exclude=['^\..*$'])
         def callable():
-            root.get_by_url('/folder3/document')
+            tree.get_by_url('/folder3/document')
         self.assertRaises(LookupError, callable)
 
     def test_primary_keys_are_passed(self):
-        root = module.YAMLTree('testdata', primary_keys=['id', 'slug'])
-        self.assertIsInstance(root.folder2.list.slug1, module.ContainerNode)
+        tree = module.DataTree('testdata', primary_keys=['id', 'slug'])
+        self.assertIsInstance(tree.root.folder2.list.slug1, module.ContainerNode)
 
 class TestParents(ut.TestCase):
     def test_cannot_have_more_parents(self):
@@ -126,14 +117,15 @@ class TestParents(ut.TestCase):
         self.assertEqual(child.get_relative_url(grandchild), '..')
 
 
-class TestYAMLParser(ut.TestCase):
-    def test_root_node(self):
-        node = module.parse_yaml('root', '')
-        self.assertIsInstance(node, module.ContainerNode)
+class TestYAMLReader(ut.TestCase):
+    def setUp(self):
+        os.makedirs('testdata')
+        doc0 = open('testdata/root.yaml', 'w')
+        doc1 = open('testdata/multidoc.yaml', 'w')
+        doc2 = open('testdata/layered.yaml', 'w')
 
-    def test_multi_document(self):
-        node = module.parse_yaml('root', 
-            '''
+        doc0.write('')
+        doc1.write('''
 ---
 name: The Set of Gauntlets 'Pauraegen'
 description: >
@@ -145,17 +137,75 @@ description: >
    A set of gauntlets that gives off a foul,
    acrid odour yet remains untarnished.
             ''')
-        self.assertIsInstance(node, module.ContainerNode)
-
-    def test_multiple_layers(self):
-        root = module.parse_yaml('root', 
-            '''
+        doc2.write('''
             a: 1
             b:
                 c: 2
                 d: 3
         ''')
+
+        for stream in [doc0, doc1, doc2]:
+            stream.close()
+
+    def tearDown(self):
+        rmtree('testdata')
+
+    def test_root_node(self):
+        node = module.YAMLReader('testdata/root.yaml').read()
+        self.assertIsInstance(node, module.ContainerNode)
+ 
+    def test_multi_document(self):
+        node = module.YAMLReader('testdata/multidoc.yaml').read()
+        self.assertIsInstance(node, module.ContainerNode)
+ 
+    def test_multiple_layers(self):
+        root = module.YAMLReader('testdata/layered.yaml').read()
         self.assertListEqual([root.a.get_data(), root.b.c.get_data(), root.b.d.get_data()], [u'1', u'2', u'3'])
+
+class TestJSONReader(ut.TestCase):
+    def setUp(self):
+        os.makedirs('testdata')
+        doc0 = open('testdata/root.json', 'w')
+        doc2 = open('testdata/layered.json', 'w')
+
+        doc0.write('')
+        doc2.write('{"a": 1, "b": {"c": 2, "d": 3}}')
+
+        for stream in [doc0, doc2]:
+            stream.close()
+
+    def tearDown(self):
+        rmtree('testdata')
+
+    def test_root_node(self):
+        node = module.JSONReader('testdata/root.json').read()
+        self.assertIsInstance(node, module.ContainerNode)
+ 
+    def test_multiple_layers(self):
+        root = module.JSONReader('testdata/layered.json').read()
+        self.assertListEqual([root.a.get_data(), root.b.c.get_data(), root.b.d.get_data()], [u'1', u'2', u'3'])
+
+class TestCSVReader(ut.TestCase):
+    def setUp(self):
+        os.makedirs('testdata')
+        doc0 = open('testdata/root.csv', 'w')
+
+        doc0.write(u'''a,b,c
+1,2,3
+4,5,6
+ő,ű,á'''.encode('utf-8'))
+        doc0.close()
+
+    def tearDown(self):
+        rmtree('testdata')
+
+    def test_root_node(self):
+        node = module.CSVReader('testdata/root.csv').read()
+        self.assertDictEqual(node.id0.get_dictionary(), dict(a=u'1', b=u'2', c=u'3'))
+
+    def test_unicode(self):
+        node = module.CSVReader('testdata/root.csv').read()
+        self.assertDictEqual(node.id2.get_dictionary(), dict(a=u'ő', b=u'ű', c=u'á'))
 
 class TestDictParser(ut.TestCase):
     def test_root_node(self):
