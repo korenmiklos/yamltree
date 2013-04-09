@@ -338,6 +338,11 @@ class TestTrueism(ut.TestCase):
         node = module.LiteralNode('test')
         self.failIf(node)
 
+    def test_empty_string(self):
+        node = module.LiteralNode('test')
+        node.set_data("")
+        self.failIf(node)
+
 class TestExceptions(ut.TestCase):
     def test_long_name_rejected(self):
         def callable():     

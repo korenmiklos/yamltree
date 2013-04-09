@@ -136,7 +136,7 @@ class Node(object):
 class LiteralNode(Node):
     def __nonzero__(self):
         # literal node is True if has data
-        return self.__data__ is not None
+        return (self.__data__ is not None) and (not self.__data__ == "")
 
     def get_data(self):
         return self.__data__
