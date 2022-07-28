@@ -7,7 +7,7 @@
 
 __docformat__ = 'markdown en'
 __author__ = "Miklós Koren <miklos.koren@gmail.com>"
-__version__ = "0.4.1"
+__version__ = "0.4.2"
 
 import re
 import yaml
@@ -111,7 +111,7 @@ class Node(object):
         self.__children__ = None
         self.__parent__ = None
 
-    def __nonzero__(self):
+    def __bool__(self):
         # default object is True
         return True
 
@@ -138,9 +138,12 @@ class Node(object):
 
 
 class LiteralNode(Node):
-    def __nonzero__(self):
+    def __bool__(self):
         # literal node is True if has data
         return (self.__data__ is not None) and (not self.__data__ == "")
+
+    def __lt__(self, other):
+        return str(self) < str(other)
 
     def get_data(self):
         return self.__data__
@@ -149,7 +152,7 @@ class LiteralNode(Node):
         self.__data__ = str(value)
 
     def __unicode__(self):
-        return str(self.get_data())
+        return self.get_data()
 
     def __str__(self):
         return self.__unicode__()
@@ -177,9 +180,9 @@ class ContainerNode(Node):
         # store ordering in __meta__ so that applications can change that if they want
         self.__meta__['ordering'] = []
 
-    def __nonzero__(self):
+    def __bool__(self):
         # container node is True if has children
-        return len(self.__children__)
+        return len(self.__children__) > 0
 
     def __contains__(self, item):
         if isinstance(item, str):
