@@ -7,7 +7,7 @@
 
 __docformat__ = 'markdown en'
 __author__ = "Miklós Koren <miklos.koren@gmail.com>"
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 import re
 import yaml
@@ -149,7 +149,7 @@ class LiteralNode(Node):
         self.__data__ = str(value)
 
     def __unicode__(self):
-        return self.get_data()
+        return str(self.get_data())
 
     def __str__(self):
         return self.__unicode__()
