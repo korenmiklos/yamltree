@@ -1,7 +1,5 @@
 # encoding: utf-8
-from setuptools import setup, find_packages
-import sys, os
-
+from setuptools import setup
 from datatree import __version__
 
 setup(

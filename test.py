@@ -6,6 +6,10 @@ from shutil import rmtree
 import yaml
 import re
 
+# upgrading to Python 3, where all strings are unicode
+def unicode(x):
+    return str(x)
+
 class TestYAMLLoader(ut.TestCase):
     def setUp(self):
         os.makedirs('testdata/folder1')
@@ -188,12 +192,12 @@ class TestJSONReader(ut.TestCase):
 class TestCSVReader(ut.TestCase):
     def setUp(self):
         os.makedirs('testdata')
-        doc0 = open('testdata/root.csv', 'w')
+        doc0 = open('testdata/root.csv', 'wt', encoding='utf-8')
 
         doc0.write(u'''a,b,c
 1,2,3
 4,5,6
-ő,ű,á'''.encode('utf-8'))
+ő,ű,á''')
         doc0.close()
 
     def tearDown(self):

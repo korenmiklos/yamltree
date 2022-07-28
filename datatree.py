@@ -7,14 +7,18 @@
 
 __docformat__ = 'markdown en'
 __author__ = "Miklós Koren <miklos.koren@gmail.com>"
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 import re
 import yaml
 import json
 import csv
-import fnmatch
 import os
+from functools import reduce
+
+# upgrading to Python 3, where all strings are unicode
+def unicode(x):
+    return str(x)
 
 SLUG_REGEX = re.compile('^[A-Za-z_]\w{0,64}$')
 RESERVED_WORDS = ['get_tree', 'get_data', 'set_data', 'get_absolute_url'
@@ -44,28 +48,28 @@ def parse_object(name, obj, primary_keys=[]):
     >>> root = parse_object('root', {'a': 1, 'b': {'c': 2, 'd': 3}})
     >>> root.__name__
     'root'
-    >>> print root.a
+    >>> print(root.a)
     1
-    >>> print root.b.c
+    >>> print(root.b.c)
     2
-    >>> print root.b.d
+    >>> print(root.b.d)
     3
     >>> lst = parse_object('list', [1, 2, 3])
-    >>> print lst.id0
+    >>> print(lst.id0)
     1
-    >>> print lst.id1
+    >>> print(lst.id1)
     2
-    >>> print lst.id2
+    >>> print(lst.id2)
     3
 
     '''
-    if isinstance(primary_keys, basestring):
+    if isinstance(primary_keys, str):
         primary_keys = [primary_keys]
     if isinstance(obj, dict):
         root = ContainerNode(name)
-        for (key, value) in obj.iteritems():
+        for (key, value) in obj.items():
             if key is None:
-                print "%s: %s" % (key, value)
+                print("%s: %s" % (key, value))
                 raise NameError
             node = parse_object(key, value, primary_keys)
             root.add_child(node)
@@ -100,7 +104,7 @@ class Node(object):
     def __init__(self, name):
         slug = slugify(name)
         if (not SLUG_REGEX.match(slug)) or (slug in RESERVED_WORDS) or (RESERVED_WORDS_REGEX.match(slug)):
-            raise NameError, '%s is not an admissible name. node = %s' % (slug, name)
+            raise NameError('%s is not an admissible name. node = %s' % (slug, name))
         self.__name__ = slug
         self.__meta__ = dict(verbose_name=name)
         self.__data__ = None
@@ -123,7 +127,7 @@ class Node(object):
         return os.path.relpath(self.get_absolute_url(), other.get_absolute_url())
 
     def set_metadata(self, **kwargs):
-        for (key, value) in kwargs.iteritems():
+        for (key, value) in kwargs.items():
             self.__meta__[key] = value
 
     def get_metadata(self, key):
@@ -142,10 +146,10 @@ class LiteralNode(Node):
         return self.__data__
 
     def set_data(self, value):
-        self.__data__ = unicode(value)
+        self.__data__ = str(value)
 
     def __unicode__(self):
-        return unicode(self.get_data())
+        return self.get_data()
 
     def __str__(self):
         return self.__unicode__()
@@ -178,16 +182,16 @@ class ContainerNode(Node):
         return len(self.__children__)
 
     def __contains__(self, item):
-        if isinstance(item, basestring):
+        if isinstance(item, str):
             return item.lower() in self.__children__.keys()
         elif isinstance(item, Node):
             return item in self.__children__.values()
 
     def add_child(self, node):
         if node.__name__ in [child.__name__ for child in self]:
-            raise NameError, 'Children must have unique names. node = %s' % self.get_absolute_url()
+            raise NameError('Children must have unique names. node = %s' % self.get_absolute_url())
         if node.__parent__ is not None:
-            raise ValueError, 'Child cannot have multiple parents. node = %s' % self.get_absolute_url()
+            raise ValueError('Child cannot have multiple parents. node = %s' % self.get_absolute_url())
         self.__children__[node.__name__] = node
         self.__meta__['ordering'].append(node.__name__)
         node.__parent__ = self
@@ -206,7 +210,7 @@ class ContainerNode(Node):
 
     def get_dictionary(self):
         output = {}
-        for key, value in self.__children__.iteritems():
+        for key, value in self.__children__.items():
             try:
                 output[key] = value.get_dictionary()
             except:
@@ -223,15 +227,15 @@ class ContainerNode(Node):
         if name.lower() in self.__children__:
             return self.__children__[name.lower()]
         else:
-            raise KeyError, '%s is not a child node. node = %s' % (name, self.get_absolute_url())
+            raise KeyError('%s is not a child node. node = %s' % (name, self.get_absolute_url()))
 
     def __getitem__(self, key):
         return self.__getattr__(key)
 
     def set_data(self, *args):
-        raise TypeError, 'Container nodes cannot handle data directly. node = %s' % self.get_absolute_url()
+        raise TypeError('Container nodes cannot handle data directly. node = %s' % self.get_absolute_url())
     def get_data(self, *args):
-        raise LookupError, 'Container nodes cannot handle data directly. node = %s' % self.get_absolute_url()
+        raise LookupError('Container nodes cannot handle data directly. node = %s' % self.get_absolute_url())
 
 class Reader(object):
     '''
@@ -248,7 +252,7 @@ class Reader(object):
         elif os.path.isfile(self.path):
             self.isdir = False
         else:
-            raise IOError, 'File %s not found.' % self.path
+            raise IOError('File %s not found.' % self.path)
 
     def _open(self):
         '''
@@ -295,7 +299,7 @@ class YAMLReader(Reader):
     Read from a YAML file.
     '''
     def _deserialize(self, stream):
-        doc = list(yaml.load_all(stream.read()))
+        doc = list(yaml.load_all(stream.read(), Loader=yaml.SafeLoader))
         if len(doc)==1:
             return doc[0]
         else:
@@ -312,7 +316,7 @@ class CSVReader(Reader):
         csv_reader = csv.DictReader(stream)
         doc = []
         for row in csv_reader:
-            doc.append(dict([(key, unicode(value, 'utf-8')) for key, value in row.iteritems()]))
+            doc.append(dict([(key, value) for key, value in row.items()]))
         return doc
 
 DISPATCHER = {re.compile('^.+\.ya?ml$'): YAMLReader, 
