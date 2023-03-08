@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "datatree"
+version = "0.4.2"
+description = "Parse a directory of structured documents (YAML, JSON, CSV) into a tree-like Python object."
+authors = ["Miklos Koren <miklos.koren@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+PyYAML = "^6.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
